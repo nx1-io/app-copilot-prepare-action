@@ -1,0 +1,62 @@
+name: {{ service['name'] }}
+type: Load Balanced Web Service
+
+http:
+  path: /
+  healthcheck: 
+    path: {{ service['healthcheck_path'] | default('/') }}
+    interval: {{ service['healthcheck_interval'] | default('15s') }}
+    grace_period: {{ service['healthcheck_grace_period'] | default('30s') }}
+    healthy_threshold: {{ service['healthcheck_healthy_threshold'] | default('2') }}
+    unhealthy_threshold: {{ service['healthcheck_unhealthy_threshold'] | default('2') }}
+  deregistration_delay: {{ service['deregistration_delay'] | default('15s') }}
+
+image:
+  build:
+    dockerfile: {{ '.nixpacks/Dockerfile' if ('nixpacks' in repo_features) else 'Dockerfile' }}
+    context: .
+    platform: x86_64
+    cache_from:
+      - ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COPILOT_APPLICATION_NAME}/${COPILOT_SERVICE_NAME}:latest
+  port: {{ service['http_port'] }}
+
+environments:
+{%- for environment in service['environments'].values() %}
+  {%- set resources = environment['service_resources'] %}
+  {%- set specifications = environment['specifications'] %}
+  {{ environment['details']['account_name'] }}:
+    {%- if 'hostname' in specifications %}
+    http:
+      alias:
+        - name: {{ specifications['hostname'] }}
+        {%- if 'hosted_zone_id' in resources.domains[0] %}
+          hosted_zone: {{ resources.domains[0]['hosted_zone_id'] }}
+        {%- endif %}
+    {%- endif %}
+    {%- if service['spot'] == 'true' %}
+    count:
+      spot: {{ service['count'] | default('2') }}
+    {%- else %}
+    count: {{ service['count'] | default('2') }}
+    {%- endif %}
+
+    secrets:
+    {%- for secret in resources['secrets'] %}
+      # secret {{ secret['name'] }} items:
+      {%- for secret_item_key, secret_item_value in secret['items'].items() %}
+      {%- set secrets_manager_group = secret_item_value.split(":secret:")[-1] %}
+      {{ secret_item_key }}:
+        secretsmanager: '{{ secrets_manager_group }}:{{ secret_item_key }}::'
+      {%- endfor %}
+    {%- endfor %}
+{%- endfor %}
+
+cpu: {{ service['cpu'] | default('1024')}}
+memory: {{ service['memory'] | default('2048') }}
+platform: {{ service['platform'] | default('linux/x86_64') }}
+count: 1
+exec: true
+network:
+  connect: {{ service['network_connect'] | default('false') }}
+  vpc:
+    placement: private

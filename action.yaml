@@ -1,0 +1,27 @@
+name: NX1 Deploy
+description: Deploy a NX1 application
+inputs:
+  app_id:
+    description: Your NX1 application ID.
+    required: true
+  api_url:
+    description: The NX1 API URL.
+    default: https://app.citadel.run/api
+    required: false
+  api_token:
+    description: Used to pull the required data from NX1 API.
+    required: true
+  env_id:
+    description: The NX1 environment ID.
+    required: true
+outputs:
+  http_address:
+    description: The main address to access the public application
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    APP_ID: ${{ inputs.app_id }}
+    API_URL: ${{ inputs.api_url }}
+    API_TOKEN: ${{ inputs.api_token }}
+    ENV_ID: ${{ inputs.env_id }}

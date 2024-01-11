@@ -1,0 +1,46 @@
+name: {{ service['name'] }}
+type: Backend Service
+
+image:
+  build:
+    dockerfile: {{ '.nixpacks/Dockerfile' if ('nixpacks' in repo_features) else 'Dockerfile' }}
+    context: .
+    platform: x86_64
+    cache_from:
+      - ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COPILOT_APPLICATION_NAME}/${COPILOT_SERVICE_NAME}:latest
+
+environments:
+{%- for environment in service['environments'].values() %}
+  {%- set resources = environment['service_resources'] %}
+  {%- set specifications = environment['specifications'] %}
+  {{ environment['details']['account_name'] }}:
+    {%- if service['spot'] == 'true' %}
+    count:
+      spot: {{ service['count'] | default('1') }}
+    {%- else %}
+    count: {{ service['count'] | default('1') }}
+    {%- endif %}
+
+    secrets:
+    {%- for secret in resources['secrets'] %}
+      # secret {{ secret['name'] }} items:
+      {%- for secret_item_key, secret_item_value in secret['items'].items() %}
+      {%- set secrets_manager_group = secret_item_value.split(":secret:")[-1] %}
+      {{ secret_item_key }}:
+        secretsmanager: '{{ secrets_manager_group }}:{{ secret_item_key }}::'
+      {%- endfor %}
+    {%- endfor %}
+{%- endfor %}
+
+deployment:
+  rolling: recreate
+
+cpu: {{ service['cpu'] | default('1024')}}
+memory: {{ service['memory'] | default('2048') }}
+platform: {{ service['platform'] | default('linux/x86_64') }}
+count: 1
+exec: true
+network:
+  connect: {{ service['network_connect'] | default('false') }}
+  vpc:
+    placement: private

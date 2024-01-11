@@ -1,0 +1,28 @@
+name: {{ service['name'] }}
+type: Static Site
+
+files:
+  - source: {{ service['repository_public_path'] }}
+    recursive: true
+
+environments:
+{%- for environment in service['environments'].values() %}
+  {%- set resources = environment['service_resources'] %}
+  {%- set specifications = environment['specifications'] %}
+  {{ environment['details']['account_name'] }}:
+    {%- if 'hostname' in specifications %}
+    http:
+      certificate: {{ resources['ssl_certificates'][0]['arn'] }}
+      alias: {{ specifications['hostname'] }}
+    {%- endif %}
+
+    secrets:
+    {%- for secret in resources['secrets'] %}
+      # secret {{ secret['name'] }} items:
+      {%- for secret_item_key, secret_item_value in secret['items'].items() %}
+      {%- set secrets_manager_group = secret_item_value.split(":secret:")[-1] %}
+      {{ secret_item_key }}:
+        secretsmanager: '{{ secrets_manager_group }}:{{ secret_item_key }}::'
+      {%- endfor %}
+    {%- endfor %}
+{%- endfor %}

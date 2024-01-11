@@ -1,0 +1,30 @@
+#file: noinspection YAMLSchemaValidation
+{%- set name = environment['details']['account_name'] -%}
+{%- set uuid = environment['details']['uuid'] %}
+
+name: {{ name }}
+type: Environment
+
+network:
+  vpc:
+    id: {{ environment['info']['VPC'] }}
+    subnets:
+      public:
+        - id: {{ environment['info']['VPCSubnetPublicAId'] }}
+        - id: {{ environment['info']['VPCSubnetPublicBId'] }}
+        - id: {{ environment['info']['VPCSubnetPublicCId'] }}
+      private:
+        - id: {{ environment['info']['VPCSubnetPrivateAId'] }}
+        - id: {{ environment['info']['VPCSubnetPrivateBId'] }}
+        - id: {{ environment['info']['VPCSubnetPrivateCId'] }}
+
+http:
+  public:
+  {%- for service in app['services'] -%}
+    {%- for ssl_certificate in service['environments'][name]['service_resources']['ssl_certificates'] %}
+    certificates: [{{ ssl_certificate['arn'] }}]
+    {%- endfor -%}
+  {%- endfor %}
+
+observability:
+  container_insights: false

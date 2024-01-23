@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The name of the environment being deployed.
+
+Mapping:
+  EnvironmentsMap:
+  {%- for environment in environments.values() %}
+    {%- set resources = environment['service_resources'] %}
+    {%- set specifications = environment['specifications'] %}
+    {{ environment['details']['account_name'] }}:
+      {%- for addon in environment['addons'] %}
+        {%- if addon['name'] == addon_name %}
+          {%- for metadataKey, metadataValue in addon['metadata'].items() %}
+            {{ metadataKey }}: {{ metadataValue }}
+          {%- endfor %}
+        {%- endif %}
+      {%- endfor %}
+  {%- endfor %}
+
+Resources:
+  DB:
+    Type: 'AWS::RDS::DBInstance'
+    DeletionPolicy: Retain
+    Properties:
+      DBInstanceIdentifier: !Sub "${App}-${Env}-DB"
+      DBName: {{ metadata.database_name }}
+      DBInstanceClass: {{ metadata.db_instance_class|default("db.t3.micro", true) }}
+      AllocatedStorage: {{ metadata.allocated_storage|default("20", true) }}
+      Engine: "MySQL"
+      EngineVersion: "8.0.35"
+      DBSubnetGroupName: !ImportValue citadel-VPCDBSubnetGroupName
+      VPCSecurityGroups: 
+        - !Ref DBSecurityGroup
+      StorageEncrypted: true
+      KmsKeyId: !Ref DBKMSKey
+      MasterUsername: "root"
+      ManageMasterUserPassword: true
+      MasterUserSecret:
+        KmsKeyId: !ImportValue 
+          Fn::Sub: "${App}-ArtifactKey"
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: Retain
+    Properties:
+      GroupDescription: Allow DB access from private subnet
+      VpcId: !ImportValue citadel-VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !ImportValue citadel-VPCSubnetPrivateACidrBlock
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !ImportValue citadel-VPCSubnetPrivateBCidrBlock
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !ImportValue citadel-VPCSubnetPrivateCCidrBlock
+
+  DBKMSKey:
+    Type: 'AWS::KMS::Key'
+    DeletionPolicy: Retain
+    Properties:
+      Description: !Sub "KMS Key for ${App}-${Env}-DB"
+      EnableKeyRotation: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: !Ref "AWS::StackName"
+        Statement:
+          - Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                Fn::Sub: 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action:
+              - "kms:*"
+            Resource: "*"
+
+Outputs:
+  DBAddress:
+    Value: !GetAtt "DB.Endpoint.Address"
+    Export:
+      Name: !Sub "${App}-${Env}-DB-Address"
+  DBPort:
+    Value: !GetAtt "DB.Endpoint.Port"
+    Export:
+      Name: !Sub "${App}-${Env}-DB-Port"
+  DBSecretUser:
+    Description: "The user to log into the DB"
+    Value: !Sub
+      - "${Secret}:username::"
+      - Secret: !GetAtt "DB.MasterUserSecret.SecretArn"
+    Export:
+      Name: !Sub ${App}-${Env}-DB-Secret-Username
+  DBSecretPassword:
+    Description: "The password to log into the DB"
+    Value: !Sub
+      - "${Secret}:password::"
+      - Secret: !GetAtt "DB.MasterUserSecret.SecretArn"
+    Export:
+      Name: !Sub ${App}-${Env}-DB-Secret-Password

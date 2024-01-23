@@ -2,6 +2,7 @@ import os
 import json
 import requests
 
+from Factories.Copilot.Environments.Addons.factory import AddonFactory
 from Factories.Copilot.Services.service_name.Overrides.CfnPatches.factory import CfnPatchesFactory
 from Factories.Copilot.Services.service_name.Manifest.factory import ManifestFactory as ServiceManifestFactory
 from Factories.Copilot.Environments.environment_name.Manifest.factory import \
@@ -56,7 +57,16 @@ def build_copilot_content():
         ServiceManifestFactory(service_name=service['name'], context=context).build()
         CfnPatchesFactory(service_name=service['name'], context=context).build()
 
+    build_application_addons()
+
     WorkspaceFactory(context={'app_name': data['name']}).build()
+
+
+def build_application_addons():
+    environments = data['services'][0]['environments']
+    random_app_environment = list(environments.values())[0]
+    for addon in random_app_environment['addons']:
+        AddonFactory(addon=addon, environments=environments).build()
 
 
 def build_service_role_arn(environment_name):
@@ -97,6 +107,7 @@ def write_env_vars():
             with open(github_env_file, 'a') as file:
                 file.writelines(env_vars)
 
+
 def _validate_inputs():
     if not app_id:
         print('# error: app_id is not specified')
@@ -109,6 +120,7 @@ def _validate_inputs():
     if not api_token:
         print('# error: api_token is not specified')
         exit(1)
+
 
 if __name__ == "__main__":
     _validate_inputs()

@@ -1,0 +1,143 @@
+{
+  "id": "9a90adf1-9690-489f-a736-95dcb8b922ea",
+  "name": "dev-citadel",
+  "services": {
+    "9a90afca-aed2-43f3-b1c1-47f0f2f41b66": {
+      "id": "9a90afca-aed2-43f3-b1c1-47f0f2f41b66",
+      "name": "web",
+      "http_port": 8080,
+      "healthcheck_path": "/healthcheck",
+      "repository_public_path": "/public",
+      "environments": {
+        "dev-citadel-env": {
+          "details": {
+            "uuid": "0d9a6c40-b97f-47fb-aabc-133b1efaa76d",
+            "account_name": "dev-citadel-env",
+            "aws_account_id": "222222222222",
+            "aws_region": "us-west-2"
+          },
+          "service_resources": {
+            "domains": [
+              {
+                "name": "abc321.com.br",
+                "services": [
+                  "9a90afca-aed2-43f3-b1c1-47f0f2f41b66"
+                ]
+              }
+            ],
+            "secrets": [
+              {
+                "name": "SSH_KEY",
+                "items": {
+                  "demo1": "arn:aws:secretsmanager:ap-southeast-1:932213710980:secret:citadel/app1-7sIr7u",
+                  "DEMO2": "arn:aws:secretsmanager:ap-southeast-1:932213710980:secret:citadel/app1-7sIr7u",
+                  "DEMO3": "arn:aws:secretsmanager:ap-southeast-1:932213710980:secret:citadel/app1-7sIr7u",
+                  "DEMO4": "arn:aws:secretsmanager:ap-southeast-1:932213710980:secret:citadel/app1-7sIr7u"
+                }
+              }
+            ],
+            "ssl_certificates": [
+              {
+                "uuid": "018092ea-d7cd-4529-a99b-404b3a9c3157",
+                "domain_name": [
+                  "abc.com.br"
+                ],
+                "domain": null,
+                "hosted_zone_id": "",
+                "scope": "local",
+                "services": [
+                  "9a90afca-aed2-43f3-b1c1-47f0f2f41b66"
+                ],
+                "arn": "arn:aws:acm:us-east-2:932213710980:certificate/ef1fd4f2-f112-47b5-a3db-a52611102d38"
+              }
+            ]
+          }
+        },
+        "account-3": {
+          "details": {
+            "uuid": "df0949a3-a05d-4869-b598-b432419ffbce",
+            "account_name": "account-3",
+            "aws_account_id": "333333333333",
+            "aws_region": "us-west-1"
+          },
+          "service_resources": {
+            "domains": [
+
+            ],
+            "secrets": [
+
+            ],
+            "ssl_certificates": [
+
+            ]
+          }
+        }
+      }
+    },
+    "9a90b2a2-bb35-4a88-a15c-2818409cca95": {
+      "id": "9a90b2a2-bb35-4a88-a15c-2818409cca95",
+      "name": "a",
+      "http_port": 1,
+      "healthcheck_path": "a",
+      "repository_public_path": "a",
+      "environments": {
+        "dev-citadel-env": {
+          "details": {
+            "uuid": "0d9a6c40-b97f-47fb-aabc-133b1efaa76d",
+            "account_name": "dev-citadel-env",
+            "aws_account_id": "222222222222",
+            "aws_region": "us-west-2"
+          },
+          "service_resources": {
+            "domains": [
+
+            ],
+            "secrets": [
+
+            ],
+            "ssl_certificates": [
+
+            ]
+          }
+        },
+        "account-3": {
+          "details": {
+            "uuid": "df0949a3-a05d-4869-b598-b432419ffbce",
+            "account_name": "account-3",
+            "aws_account_id": "333333333333",
+            "aws_region": "us-west-1"
+          },
+          "service_resources": {
+            "domains": [
+
+            ],
+            "secrets": [
+
+            ],
+            "ssl_certificates": [
+
+            ]
+          }
+        }
+      }
+    }
+  },
+  "environments": {
+    "dev-citadel-env": {
+      "details": {
+        "uuid": "0d9a6c40-b97f-47fb-aabc-133b1efaa76d",
+        "account_name": "dev-citadel-env",
+        "aws_account_id": "222222222222",
+        "aws_region": "us-west-2"
+      }
+    },
+    "account-3": {
+      "details": {
+        "uuid": "df0949a3-a05d-4869-b598-b432419ffbce",
+        "account_name": "account-3",
+        "aws_account_id": "333333333333",
+        "aws_region": "us-west-1"
+      }
+    }
+  }
+}

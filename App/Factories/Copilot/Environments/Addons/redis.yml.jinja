@@ -1,0 +1,31 @@
+Parameters:
+  App:
+    Type: String
+  Env:
+    Type: String
+
+Resources:
+  SqsLaravel:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${App}-${Env}-{{ metadata.queue_name }}"
+      MessageRetentionPeriod: 345600
+
+Outputs:
+  SqsAddonArn:
+    Description: ARN of the addon SQS Queue
+    Value: !GetAtt SqsLaravel.Arn
+    Export:
+      Name: !Sub "${App}-${Env}-{{ metadata.queue_name }}-Arn"
+
+  SqsAddonUrl:
+    Description: URL of the addon SQS Queue
+    Value: !Ref SqsLaravel
+    Export:
+      Name: !Sub "${App}-${Env}-{{ metadata.queue_name }}-Url"
+
+  SqsAddonName:
+    Description: Name of the addon SQS Queue
+    Value: !GetAtt SqsLaravel.QueueName
+    Export:
+      Name: !Sub "${App}-${Env}-{{ metadata.queue_name }}-Name"

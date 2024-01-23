@@ -18,6 +18,7 @@ data = None
 
 workspace_path = os.getenv('OUTPUT_PATH', '/github/workspace/')
 
+
 def get_data():
     if not test_file:
         return fetch_data()
@@ -38,12 +39,14 @@ def fetch_data():
 
     return response.json()
 
+
 def find_repo_features():
     features = []
     if os.path.isfile(workspace_path + '.nx1-feature-nixpacks'):
         features.append('nixpacks')
 
     return features
+
 
 def build_copilot_content():
     repo_features = find_repo_features()

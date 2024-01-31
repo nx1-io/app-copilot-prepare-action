@@ -11,8 +11,7 @@ class AddonFactory(BaseFactory):
             overwrites_files=[prefix + output_filename, prefix + addon['name'] + '.yaml'],
             template_file=template_filepath,
             context={
-                'addon_name': addon['name'],
-                'metadata': addon['metadata'],
+                'addon': addon,
                 'environments': environments,
             }
         )

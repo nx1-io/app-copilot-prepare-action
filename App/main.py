@@ -33,6 +33,11 @@ def fetch_data():
 
     response = requests.get(url=url, headers=headers)
 
+    # write response to file
+    if os.getenv('OUTPUT_PATH'):
+        with open(os.getenv('OUTPUT_PATH') + 'response.json', 'w') as outfile:
+            json.dump(response.json(), outfile)
+
     if response.status_code != 200:
         print(f'# Error: NX1 request failed with status code {response.status_code}.')
         exit(1)
@@ -51,11 +56,11 @@ def find_repo_features():
 def build_copilot_content():
     repo_features = find_repo_features()
 
-    for environment in data['environments']:
+    for environment in data['environments'].values():
         context = {'environment': environment, 'app': data, 'repo_features': repo_features}
         EnvironmentManifestFactory(environment_name=environment['details']['account_name'], context=context).build()
 
-    for service in data['services']:
+    for service in data['services'].values():
         context = {'service': service, 'app': data, 'repo_features': repo_features}
         ServiceManifestFactory(service_name=service['name'], context=context).build()
         CfnPatchesFactory(service_name=service['name'], context=context).build()
@@ -66,17 +71,17 @@ def build_copilot_content():
 
 
 def build_application_addons():
-    environments = data['services'][0]['environments']
-    random_app_environment = list(environments.values())[0]
-    for addon in random_app_environment['addons']:
-        AddonFactory(addon=addon, environments=environments).build()
+
+    for addon in data['addons'].values():
+        AddonFactory(addon=addon, environments=data['environments']).build()
 
 
-def build_service_role_arn(environment_name):
-    service_environment = data['services'][0]['environments'][environment_name]
+def build_service_role_arn(environment_uuid):
+    first_service = next(iter(data['services'].values()))
+    service_environment = first_service['environments'][environment_uuid]
 
     if not service_environment['service_resources']['service_roles']:
-        print('# error: no service role found for environment ' + environment_name)
+        print('# error: no service role found for environment ' + environment_uuid)
         exit(1)
 
     return service_environment['service_resources']['service_roles'][0]['arn']
@@ -87,7 +92,7 @@ def write_env_vars():
         print('# skipping export env vars since ENV_ID is not specified')
         return
 
-    for environment in data['environments']:
+    for environment in data['environments'].values():
         if environment['details']['uuid'] == env_id:
             github_env_file = os.getenv('GITHUB_ENV')
 
@@ -98,10 +103,10 @@ def write_env_vars():
                 '\nAWS_ACCOUNT_ID=' + environment['details']['aws_account_id'],
                 '\nAWS_DEFAULT_REGION=' + environment['details']['aws_region'],
                 '\nNX1_ENV=' + environment['details']['account_name'],
-                '\nNX1_SERVICE_ROLE_ARN=' + build_service_role_arn(environment['details']['account_name']),
+                '\nNX1_SERVICE_ROLE_ARN=' + build_service_role_arn(environment['details']['uuid']),
             ]
 
-            for service in data['services']:
+            for service in data['services'].values():
                 formatted_service_name = service['name'].upper().replace('-', '_')
                 env_vars += [
                     '\nNX1_TYPE_' + formatted_service_name + '=' + service['type'],

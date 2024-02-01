@@ -91,22 +91,22 @@ Outputs:
   DBAddress:
     Value: !GetAtt "DB.Endpoint.Address"
     Export:
-      Name: !Sub "${App}-${Env}-DB-Address"
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Address"
   DBPort:
     Value: !GetAtt "DB.Endpoint.Port"
     Export:
-      Name: !Sub "${App}-${Env}-DB-Port"
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Port"
   DBSecretUser:
     Description: "The user to log into the DB"
     Value: !Sub
       - "${Secret}:username::"
       - Secret: !GetAtt "DB.MasterUserSecret.SecretArn"
     Export:
-      Name: !Sub ${App}-${Env}-DB-Secret-Username
+      Name: !Sub ${App}-${Env}-{{ addon['name'] }}-DB-Secret-Username
   DBSecretPassword:
     Description: "The password to log into the DB"
     Value: !Sub
       - "${Secret}:password::"
       - Secret: !GetAtt "DB.MasterUserSecret.SecretArn"
     Export:
-      Name: !Sub ${App}-${Env}-DB-Secret-Password
+      Name: !Sub ${App}-${Env}-{{ addon['name'] }}-DB-Secret-Password

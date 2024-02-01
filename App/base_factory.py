@@ -6,20 +6,21 @@ from mergedeep import merge
 yaml = YAML()
 
 class BaseFactory:
-    def __init__(self, context=None, output_file=None, overwrites_files=None, template_file=None, overwrite_as_list=False):
+    def __init__(self, context=None, output_file=None, overwrites_files=None, template_file=None, overwrite_as_list=False, overwrites=[]):
         self.context = context
         self.output_file = output_file
         self.overwrites_files = overwrites_files
         self.template_file = template_file
         self.overwrite_as_list = overwrite_as_list
+        self.overwrites = overwrites
         yaml.allow_duplicate_keys = True
 
-    def _render(self):
-        return TemplateHandler(self.template_file).set_context(self.context).render()
+        return self
 
-    def _render_and_merge(self):
-        rendered = self._render()
-        rendered_template = yaml.load(rendered)
+    def _render_and_load(self):
+        return yaml.load(TemplateHandler(self.template_file).set_context(self.context).render())
+
+    def _merge(self, rendered_template):
         overwrites = {}
 
         if self.overwrites_files is None or len([x for x in self.overwrites_files if os.path.isfile(x)]) == 0:
@@ -36,12 +37,19 @@ class BaseFactory:
 
         return merge(rendered_template, overwrites)
 
+    def _merge_overwrites(self, content):
+        for overwrite in self.overwrites:
+            content = merge(content, overwrite)
+
+        return content
+
     def build(self):
         os.makedirs(os.path.dirname(self.output_file), exist_ok=True)
 
         yaml.indent(mapping=2, sequence=4, offset=2)
 
-        content = self._render_and_merge()
+        content = self._merge(self._render_and_load())
+        content = self._merge_overwrites(content)
 
         with open(self.output_file, 'w') as file:
             yaml.dump(content, file)

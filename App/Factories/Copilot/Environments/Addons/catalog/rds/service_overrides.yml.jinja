@@ -1,0 +1,10 @@
+variables:
+  DB_HOST:
+    from_cfn: "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ addon['name'] }}-DB-Address"
+  DB_PORT:
+    from_cfn: "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ addon['name'] }}-DB-Port"
+secrets:
+  DB_USERNAME:
+    from_cfn: "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ addon['name'] }}-DB-Secret-Username"
+  DB_PASSWORD:
+    from_cfn: "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ addon['name'] }}-DB-Secret-Password"

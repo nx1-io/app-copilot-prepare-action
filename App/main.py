@@ -55,6 +55,10 @@ def find_repo_features():
 
 def build_copilot_content():
     repo_features = find_repo_features()
+    shared_data = { 'service_overrides': [] }
+
+    for addon in data['addons'].values():
+        AddonFactory(addon=addon, environments=data['environments'], shared_data=shared_data).build()
 
     for environment in data['environments'].values():
         context = {'environment': environment, 'app': data, 'repo_features': repo_features}
@@ -62,18 +66,10 @@ def build_copilot_content():
 
     for service in data['services'].values():
         context = {'service': service, 'app': data, 'repo_features': repo_features}
-        ServiceManifestFactory(service_name=service['name'], context=context).build()
-        CfnPatchesFactory(service_name=service['name'], context=context).build()
-
-    build_application_addons()
+        ServiceManifestFactory(service_name=service['name'], context=context, shared_data=shared_data).build()
+        CfnPatchesFactory(service_name=service['name'], context=context,).build()
 
     WorkspaceFactory(context={'app_name': data['name']}).build()
-
-
-def build_application_addons():
-
-    for addon in data['addons'].values():
-        AddonFactory(addon=addon, environments=data['environments']).build()
 
 
 def build_service_role_arn(environment_uuid):

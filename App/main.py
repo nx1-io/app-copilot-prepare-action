@@ -65,9 +65,9 @@ def build_copilot_content():
         EnvironmentManifestFactory(environment_name=environment['details']['account_name'], context=context).build()
 
     for service in data['services'].values():
-        context = {'service': service, 'app': data, 'repo_features': repo_features}
+        context = {'service': service, 'app': data, 'repo_features': repo_features, 'environments': data['environments'], 'environment_id': env_id}
         ServiceManifestFactory(service_name=service['name'], context=context, shared_data=shared_data).build()
-        CfnPatchesFactory(service_name=service['name'], context=context,).build()
+        CfnPatchesFactory(service_name=service['name'], context=context).build()
 
     WorkspaceFactory(context={'app_name': data['name']}).build()
 

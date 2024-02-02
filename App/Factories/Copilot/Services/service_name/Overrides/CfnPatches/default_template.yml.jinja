@@ -2,3 +2,10 @@
   path: /Resources/ExecutionRole/Properties/Policies/0/PolicyDocument/Statement/0/Condition
 - op: remove
   path: /Resources/ExecutionRole/Properties/Policies/0/PolicyDocument/Statement/1/Condition
+
+{%- if environments[environment_id]['info']['NATMode'] == 'no-nat' %}
+- op: replace
+  path: /Resources/Service/Properties/NetworkConfiguration/AwsvpcConfiguration/AssignPublicIp
+  value: ENABLED
+{%- endif %}
+

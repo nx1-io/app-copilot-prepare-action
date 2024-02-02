@@ -7,7 +7,7 @@ Parameters:
     Type: String
     Description: The name of the environment being deployed.
 
-Mapping:
+Mappings:
   EnvironmentsMap:
   {%- for environment in environments.values() %}
     {{ environment['details']['account_name'] }}:

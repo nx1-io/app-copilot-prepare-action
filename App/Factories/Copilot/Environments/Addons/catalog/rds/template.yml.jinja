@@ -88,6 +88,10 @@ Resources:
             Resource: "*"
 
 Outputs:
+  DBName:
+    Value: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBName] }
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Name"
   DBAddress:
     Value: !GetAtt "DB.Endpoint.Address"
     Export:

@@ -12,7 +12,7 @@ Mappings:
   {%- for environment in environments.values() %}
     {{ environment['details']['account_name'] }}:
       {%- for metadataKey, metadataValue in addon['metadata'].items() %}
-        {{ metadataKey }}: {{ metadataValue }}
+        {{ metadataKey|replace('_','-') }}: {{ metadataValue }}
       {%- endfor %}
   {%- endfor %}
 
@@ -31,12 +31,12 @@ Resources:
     Type: 'AWS::RDS::DBInstance'
     DeletionPolicy: Retain
     Properties:
-      DBInstanceIdentifier: !Sub "${App}-${Env}-DB"
-      DBName: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_name] }
-      DBInstanceClass: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, db_instance_class] }
-      AllocatedStorage: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, allocated_storage] }
-      Engine: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, engine] }
-      EngineVersion: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, version] }
+      DBInstanceIdentifier: !Sub "${App}-${Env}-{{ addon['name'] }}-DB"
+      DBName: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-name] }
+      DBInstanceClass: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, db-instance-class] }
+      AllocatedStorage: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, allocated-storage] }
+      Engine: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, engine] }
+      EngineVersion: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, version] }
       DBSubnetGroupName: !ImportValue citadel-VPCDBSubnetGroupName
       VPCSecurityGroups: 
         - !Ref DBSecurityGroup
@@ -56,16 +56,16 @@ Resources:
       VpcId: !ImportValue citadel-VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, port] }
-          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, port] }
+          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, port] }
+          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, port] }
           CidrIp: !ImportValue citadel-VPCSubnetPrivateACidrBlock
         - IpProtocol: tcp
-          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, port] }
-          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, port] }
+          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, port] }
+          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, port] }
           CidrIp: !ImportValue citadel-VPCSubnetPrivateBCidrBlock
         - IpProtocol: tcp
-          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, port] }
-          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database_type] }, port] }
+          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, port] }
+          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, database-type] }, port] }
           CidrIp: !ImportValue citadel-VPCSubnetPrivateCCidrBlock
 
   DBKMSKey:

@@ -31,6 +31,7 @@ Resources:
     Type: 'AWS::RDS::DBInstance'
     DeletionPolicy: Retain
     Properties:
+      BackupRetentionPeriod: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, BackupRetentionPeriod] }
       DBInstanceIdentifier: !Sub "${App}-${Env}-{{ addon['name'] }}-DB"
       DBName: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBName] }
       DBInstanceClass: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBInstanceClass] }
@@ -47,6 +48,7 @@ Resources:
       MasterUserSecret:
         KmsKeyId: !ImportValue 
           Fn::Sub: "${App}-ArtifactKey"
+      MultiAZ: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, MultiAZ] }
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup

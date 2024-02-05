@@ -1,0 +1,6 @@
+variables:
+  QUEUE_CONNECTION: sqs
+  SQS_PREFIX:
+    from_cfn: "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ addon['name'] }}-SQSQueuePrefix"
+  SQS_QUEUE:
+    from_cfn: "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ addon['name'] }}-SQSQueueName"

@@ -40,6 +40,10 @@ environments:
     count: {{ service['count'] | default('2') }}
     {%- endif %}
 
+    variables:
+      AWS_DEFAULT_REGION: {{ environment['details']['aws_region'] }}
+      AWS_ACCOUNT_ID: {{ environment['details']['aws_account_id'] }}
+
     secrets:
     {%- for secret in resources['secrets'] %}
       # secret {{ secret['name'] }} items:

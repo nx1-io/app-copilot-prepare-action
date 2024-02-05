@@ -4,28 +4,46 @@ Parameters:
   Env:
     Type: String
 
+Mappings:
+  EnvironmentsMap:
+  {%- for environment in environments.values() %}
+    {{ environment['details']['account_name'] }}:
+      {%- for metadataKey, metadataValue in addon['metadata'].items() %}
+        {{ metadataKey }}: {{ metadataValue }}
+      {%- endfor %}
+  {%- endfor %}
+
+
 Resources:
-  SqsLaravel:
+  Queue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub "${App}-${Env}-{{ metadata.queue_name }}"
-      MessageRetentionPeriod: 345600
+      QueueName: !Sub "${App}-${Env}-{{ addon['name'] }}"
+      MessageRetentionPeriod: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, MessageRetentionPeriod] }
+      KmsMasterKeyId: !ImportValue 
+          Fn::Sub: "${App}-ArtifactKey"
 
 Outputs:
-  SqsAddonArn:
+  SqsQueueArn:
     Description: ARN of the addon SQS Queue
-    Value: !GetAtt SqsLaravel.Arn
+    Value: !GetAtt Queue.Arn
     Export:
-      Name: !Sub "${App}-${Env}-{{ metadata.queue_name }}-Arn"
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueArn"
 
-  SqsAddonUrl:
+  SqsQueueUrl:
     Description: URL of the addon SQS Queue
-    Value: !Ref SqsLaravel
+    Value: !GetAtt Queue.Url
     Export:
-      Name: !Sub "${App}-${Env}-{{ metadata.queue_name }}-Url"
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueUrl"
 
-  SqsAddonName:
+  SqsQueueName:
     Description: Name of the addon SQS Queue
-    Value: !GetAtt SqsLaravel.QueueName
+    Value: !GetAtt Queue.QueueName
     Export:
-      Name: !Sub "${App}-${Env}-{{ metadata.queue_name }}-Name"
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueName"
+
+  SqsQueuePrefix:
+    Description: Prefix of the addon SQS Queue
+    Value: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}"
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueuePrefix"

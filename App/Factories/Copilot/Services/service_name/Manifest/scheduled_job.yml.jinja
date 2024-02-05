@@ -20,6 +20,11 @@ environments:
   {%- set resources = environment['service_resources'] %}
   {%- set specifications = environment['specifications'] %}
   {{ environment['details']['account_name'] }}:
+
+    variables:
+      AWS_DEFAULT_REGION: {{ environment['details']['aws_region'] }}
+      AWS_ACCOUNT_ID: {{ environment['details']['aws_account_id'] }}
+
     secrets:
     {%- for secret in resources['secrets'] %}
       # secret {{ secret['name'] }} items:

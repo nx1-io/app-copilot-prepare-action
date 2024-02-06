@@ -55,10 +55,13 @@ def find_repo_features():
 
 def build_copilot_content():
     repo_features = find_repo_features()
-    shared_data = { 'service_overrides': [] }
+    shared_data = { 
+        'addon_service_manifest_overrides': [], # addon extensions that manipulate service manifest
+        'addon_service_extensions': []  # when environment addons extend to a service addon
+    }
 
     for addon in data['addons'].values():
-        AddonFactory(addon=addon, environments=data['environments'], shared_data=shared_data).build()
+        AddonFactory(addon=addon, environments=data['environments'], services=data['services'], shared_data=shared_data).build()
 
     for environment in data['environments'].values():
         context = {'environment': environment, 'app': data, 'repo_features': repo_features}

@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: Your workload's name.
+
+Resources:
+  SqsAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Grants CRUD access to the SQS Queue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DDBActions
+            Effect: Allow
+            Action:
+              - dynamodb:*
+            Resource: 
+              Fn::ImportValue: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueUrl"
+
+
+Outputs:
+  SqsAccessPolicyArn:
+    Description: "The ARN of the ManagedPolicy to attach to the task role."
+    Value: !Ref SqsAccessPolicy
+
+  QueueConnection:
+    Description: Variable QUEUE_CONNECTION
+    Value: 'sqs'
+  SqsPrefix:
+    Description: Variable SQS_PREFIX
+    Value: 
+      Fn::ImportValue: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueuePrefix"
+  SqsQueue:
+    Description: Variable SQS_QUEUE
+    Value: 
+      Fn::ImportValue: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueName"

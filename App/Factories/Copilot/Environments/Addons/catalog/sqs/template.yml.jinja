@@ -1,8 +1,11 @@
+AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   App:
     Type: String
+    Description: Your application's name.
   Env:
     Type: String
+    Description: The name of the environment being deployed.
 
 Mappings:
   EnvironmentsMap:

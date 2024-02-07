@@ -8,7 +8,7 @@ Parameters:
     Description: The name of the environment being deployed.
 
 Mappings:
-  EnvironmentsMap:
+  SqsEnvironmentsMap:
   {%- for environment in environments.values() %}
     {{ environment['details']['account_name'] }}:
       {%- for metadataKey, metadataValue in addon['metadata'].items() %}
@@ -22,7 +22,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub "${App}-${Env}-{{ addon['name'] }}"
-      MessageRetentionPeriod: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, MessageRetentionPeriod] }
+      MessageRetentionPeriod: { Fn::FindInMap: [SqsEnvironmentsMap, !Ref Env, MessageRetentionPeriod] }
       KmsMasterKeyId: !ImportValue 
           Fn::Sub: "${App}-ArtifactKey"
 

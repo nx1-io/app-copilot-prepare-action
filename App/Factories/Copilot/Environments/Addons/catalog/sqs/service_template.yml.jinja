@@ -21,7 +21,14 @@ Resources:
           - Sid: DDBActions
             Effect: Allow
             Action:
-              - dynamodb:*
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ListQueues
+              - sqs:PurgeQueue
+              - sqs:ReceiveMessage
+              - sqs:SendMessage
             Resource: 
               Fn::ImportValue: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueUrl"
 

@@ -8,7 +8,7 @@ Parameters:
     Description: The name of the environment being deployed.
 
 Mappings:
-  EnvironmentsMap:
+  RdsEnvironmentsMap:
   {%- for environment in environments.values() %}
     {{ environment['details']['account_name'] }}:
       {%- for metadataKey, metadataValue in addon['metadata'].items() %}
@@ -16,7 +16,7 @@ Mappings:
       {%- endfor %}
   {%- endfor %}
 
-  DBEngine:
+  RdsDBEngine:
     mysql:
       engine: MySQL
       port: 3306
@@ -31,13 +31,13 @@ Resources:
     Type: 'AWS::RDS::DBInstance'
     DeletionPolicy: Retain
     Properties:
-      BackupRetentionPeriod: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, BackupRetentionPeriod] }
+      BackupRetentionPeriod: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, BackupRetentionPeriod] }
       DBInstanceIdentifier: !Sub "${App}-${Env}-{{ addon['name'] }}-DB"
-      DBName: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBName] }
-      DBInstanceClass: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBInstanceClass] }
-      AllocatedStorage: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, AllocatedStorage] }
-      Engine: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, engine] }
-      EngineVersion: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, version] }
+      DBName: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBName] }
+      DBInstanceClass: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBInstanceClass] }
+      AllocatedStorage: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, AllocatedStorage] }
+      Engine: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, engine] }
+      EngineVersion: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, version] }
       DBSubnetGroupName: !ImportValue citadel-VPCDBSubnetGroupName
       VPCSecurityGroups: 
         - !Ref DBSecurityGroup
@@ -48,7 +48,7 @@ Resources:
       MasterUserSecret:
         KmsKeyId: !ImportValue 
           Fn::Sub: "${App}-ArtifactKey"
-      MultiAZ: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, MultiAZ] }
+      MultiAZ: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, MultiAZ] }
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -58,16 +58,16 @@ Resources:
       VpcId: !ImportValue citadel-VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, port] }
-          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, port] }
+          FromPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          ToPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
           CidrIp: !ImportValue citadel-VPCSubnetPrivateACidrBlock
         - IpProtocol: tcp
-          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, port] }
-          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, port] }
+          FromPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          ToPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
           CidrIp: !ImportValue citadel-VPCSubnetPrivateBCidrBlock
         - IpProtocol: tcp
-          FromPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, port] }
-          ToPort: { Fn::FindInMap: [DBEngine, { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBType] }, port] }
+          FromPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          ToPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
           CidrIp: !ImportValue citadel-VPCSubnetPrivateCCidrBlock
 
   DBKMSKey:
@@ -91,7 +91,7 @@ Resources:
 
 Outputs:
   DBName:
-    Value: { Fn::FindInMap: [EnvironmentsMap, !Ref Env, DBName] }
+    Value: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBName] }
     Export:
       Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Name"
   DBAddress:

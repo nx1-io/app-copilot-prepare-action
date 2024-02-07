@@ -1,11 +1,8 @@
 from base_factory import BaseFactory
 import os
-from pprint import pprint
 
 class AddonFactory(BaseFactory):
     def __init__(self, addon, environments, services, shared_data):
-
-        context = addon['blueprint'].get('context', 'ENVIRONMENT')
 
         prefix = os.getenv('OUTPUT_PATH', '/github/workspace/') + 'copilot/environments/' + '/addons/'
 
@@ -21,7 +18,6 @@ class AddonFactory(BaseFactory):
         service_template_filepath = template_dir + 'service_template.yml.jinja'
         if os.path.isfile(service_template_filepath):
             for service in services.values():
-                pprint(service)
                 service_prefix = os.getenv('OUTPUT_PATH', '/github/workspace/') + 'copilot/' + service['name'] + '/addons/'
                 service_addon_name = addon['name'] + '-' + service['name']
                 super().__init__(

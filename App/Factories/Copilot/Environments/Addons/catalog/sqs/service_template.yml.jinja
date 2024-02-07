@@ -30,7 +30,7 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:SendMessage
             Resource: 
-              Fn::ImportValue: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueUrl"
+              Fn::ImportValue: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueArn"
 
 
 Outputs:

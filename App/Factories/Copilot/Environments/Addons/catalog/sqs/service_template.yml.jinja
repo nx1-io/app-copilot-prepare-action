@@ -29,7 +29,7 @@ Resources:
               - sqs:PurgeQueue
               - sqs:ReceiveMessage
               - sqs:SendMessage
-            Resource: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${App}-${Env}-{{ addon['name'] }}"
+            Resource: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${App}-${Env}-{{ addon['name'] }}"
 
 
 Outputs:

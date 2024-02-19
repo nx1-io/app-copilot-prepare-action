@@ -20,8 +20,8 @@ network:
 
 http:
   public:
-  {%- for service in app['services'] -%}
-    {%- for ssl_certificate in service['environments'][name]['service_resources']['ssl_certificates'] %}
+  {%- for service in app['services'].values() -%}
+    {%- for ssl_certificate in service['environments'][uuid]['service_resources']['ssl_certificates'] %}
     certificates: [{{ ssl_certificate['arn'] }}]
     {%- endfor -%}
   {%- endfor %}

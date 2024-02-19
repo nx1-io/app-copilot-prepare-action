@@ -2,6 +2,7 @@ import os
 import json
 import requests
 
+from Factories.Copilot.Environments.Addons.factory import AddonFactory
 from Factories.Copilot.Services.service_name.Overrides.CfnPatches.factory import CfnPatchesFactory
 from Factories.Copilot.Services.service_name.Manifest.factory import ManifestFactory as ServiceManifestFactory
 from Factories.Copilot.Environments.environment_name.Manifest.factory import \
@@ -17,6 +18,7 @@ data = None
 
 workspace_path = os.getenv('OUTPUT_PATH', '/github/workspace/')
 
+
 def get_data():
     if not test_file:
         return fetch_data()
@@ -31,11 +33,17 @@ def fetch_data():
 
     response = requests.get(url=url, headers=headers)
 
+    # write response to file
+    if os.getenv('OUTPUT_PATH'):
+        with open(os.getenv('OUTPUT_PATH') + 'response.json', 'w') as outfile:
+            json.dump(response.json(), outfile)
+
     if response.status_code != 200:
         print(f'# Error: NX1 request failed with status code {response.status_code}.')
         exit(1)
 
     return response.json()
+
 
 def find_repo_features():
     features = []
@@ -44,26 +52,35 @@ def find_repo_features():
 
     return features
 
+
 def build_copilot_content():
     repo_features = find_repo_features()
+    shared_data = { 
+        'addon_service_manifest_overrides': [], # addon extensions that manipulate service manifest
+        'addon_service_extensions': []  # when environment addons extend to a service addon
+    }
 
-    for environment in data['environments']:
+    for addon in data['addons'].values():
+        AddonFactory(addon=addon, environments=data['environments'], services=data['services'], shared_data=shared_data).build()
+
+    for environment in data['environments'].values():
         context = {'environment': environment, 'app': data, 'repo_features': repo_features}
         EnvironmentManifestFactory(environment_name=environment['details']['account_name'], context=context).build()
 
-    for service in data['services']:
-        context = {'service': service, 'app': data, 'repo_features': repo_features}
-        ServiceManifestFactory(service_name=service['name'], context=context).build()
+    for service in data['services'].values():
+        context = {'service': service, 'app': data, 'repo_features': repo_features, 'environments': data['environments'], 'environment_id': env_id}
+        ServiceManifestFactory(service_name=service['name'], context=context, shared_data=shared_data).build()
         CfnPatchesFactory(service_name=service['name'], context=context).build()
 
     WorkspaceFactory(context={'app_name': data['name']}).build()
 
 
-def build_service_role_arn(environment_name):
-    service_environment = data['services'][0]['environments'][environment_name]
+def build_service_role_arn(environment_uuid):
+    first_service = next(iter(data['services'].values()))
+    service_environment = first_service['environments'][environment_uuid]
 
     if not service_environment['service_resources']['service_roles']:
-        print('# error: no service role found for environment ' + environment_name)
+        print('# error: no service role found for environment ' + environment_uuid)
         exit(1)
 
     return service_environment['service_resources']['service_roles'][0]['arn']
@@ -74,7 +91,7 @@ def write_env_vars():
         print('# skipping export env vars since ENV_ID is not specified')
         return
 
-    for environment in data['environments']:
+    for environment in data['environments'].values():
         if environment['details']['uuid'] == env_id:
             github_env_file = os.getenv('GITHUB_ENV')
 
@@ -85,10 +102,10 @@ def write_env_vars():
                 '\nAWS_ACCOUNT_ID=' + environment['details']['aws_account_id'],
                 '\nAWS_DEFAULT_REGION=' + environment['details']['aws_region'],
                 '\nNX1_ENV=' + environment['details']['account_name'],
-                '\nNX1_SERVICE_ROLE_ARN=' + build_service_role_arn(environment['details']['account_name']),
+                '\nNX1_SERVICE_ROLE_ARN=' + build_service_role_arn(environment['details']['uuid']),
             ]
 
-            for service in data['services']:
+            for service in data['services'].values():
                 formatted_service_name = service['name'].upper().replace('-', '_')
                 env_vars += [
                     '\nNX1_TYPE_' + formatted_service_name + '=' + service['type'],
@@ -96,6 +113,7 @@ def write_env_vars():
 
             with open(github_env_file, 'a') as file:
                 file.writelines(env_vars)
+
 
 def _validate_inputs():
     if not app_id:
@@ -109,6 +127,7 @@ def _validate_inputs():
     if not api_token:
         print('# error: api_token is not specified')
         exit(1)
+
 
 if __name__ == "__main__":
     _validate_inputs()

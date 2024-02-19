@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The name of the environment being deployed.
+
+Mappings:
+  SqsEnvironmentsMap:
+  {%- for environment in environments.values() %}
+    {{ environment['details']['account_name'] }}:
+      {%- for metadataKey, metadataValue in addon['metadata'].items() %}
+        {{ metadataKey }}: {{ metadataValue }}
+      {%- endfor %}
+  {%- endfor %}
+
+
+Resources:
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${App}-${Env}-{{ addon['name'] }}"
+      MessageRetentionPeriod: { Fn::FindInMap: [SqsEnvironmentsMap, !Ref Env, MessageRetentionPeriod] }
+      VisibilityTimeout: { Fn::FindInMap: [SqsEnvironmentsMap, !Ref Env, VisibilityTimeout] }
+      KmsMasterKeyId: !ImportValue 
+          Fn::Sub: "${App}-ArtifactKey"
+
+Outputs:
+  SqsQueueArn:
+    Description: ARN of the addon SQS Queue
+    Value: !GetAtt Queue.Arn
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueArn"
+
+  SqsQueueUrl:
+    Description: URL of the addon SQS Queue
+    Value: !GetAtt Queue.QueueUrl
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueUrl"
+
+  SqsQueueName:
+    Description: Name of the addon SQS Queue
+    Value: !GetAtt Queue.QueueName
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueueName"
+
+  SqsQueuePrefix:
+    Description: Prefix of the addon SQS Queue
+    Value: !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}"
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-SQSQueuePrefix"

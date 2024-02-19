@@ -10,7 +10,7 @@ image:
       - ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COPILOT_APPLICATION_NAME}/${COPILOT_SERVICE_NAME}:latest
 
 on:
-  schedule: "{{ service['schedule'] }}"
+  schedule: '{{ service['schedule'] }}'
 
 retries: 0
 timeout: 15m
@@ -20,6 +20,11 @@ environments:
   {%- set resources = environment['service_resources'] %}
   {%- set specifications = environment['specifications'] %}
   {{ environment['details']['account_name'] }}:
+
+    variables:
+      AWS_DEFAULT_REGION: {{ environment['details']['aws_region'] }}
+      AWS_ACCOUNT_ID: {{ environment['details']['aws_account_id'] }}
+
     secrets:
     {%- for secret in resources['secrets'] %}
       # secret {{ secret['name'] }} items:
@@ -39,4 +44,4 @@ network:
   vpc:
     placement: private
 
-command: ["{{ service['command'] }}"]
+command: ['{{ service['command'] }}']

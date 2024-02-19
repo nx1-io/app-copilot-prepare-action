@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The name of the environment being deployed.
+
+Mappings:
+  RdsEnvironmentsMap:
+  {%- for environment in environments.values() %}
+    {{ environment['details']['account_name'] }}:
+      {%- for metadataKey, metadataValue in addon['metadata'].items() %}
+        {{ metadataKey }}: {{ metadataValue }}
+      {%- endfor %}
+  {%- endfor %}
+
+  RdsDBEngine:
+    mysql:
+      engine: MySQL
+      port: 3306
+      version: 8.0.35
+    postgres:
+      engine: postgres
+      port: 5432
+      version: 15.5
+
+Resources:
+  DB:
+    Type: 'AWS::RDS::DBInstance'
+    DeletionPolicy: Retain
+    Properties:
+      BackupRetentionPeriod: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, BackupRetentionPeriod] }
+      DBInstanceIdentifier: !Sub "${App}-${Env}-{{ addon['name'] }}-DB"
+      DBName: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBName] }
+      DBInstanceClass: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBInstanceClass] }
+      AllocatedStorage: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, AllocatedStorage] }
+      Engine: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, engine] }
+      EngineVersion: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, version] }
+      DBSubnetGroupName: !ImportValue citadel-VPCDBSubnetGroupName
+      VPCSecurityGroups: 
+        - !Ref DBSecurityGroup
+      StorageEncrypted: true
+      KmsKeyId: !Ref DBKMSKey
+      MasterUsername: "root"
+      ManageMasterUserPassword: true
+      MasterUserSecret:
+        KmsKeyId: !ImportValue 
+          Fn::Sub: "${App}-ArtifactKey"
+      MultiAZ: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, MultiAZ] }
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: Retain
+    Properties:
+      GroupDescription: Allow DB access from private subnet
+      VpcId: !ImportValue citadel-VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          ToPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          CidrIp: !ImportValue citadel-VPCSubnetPrivateACidrBlock
+        - IpProtocol: tcp
+          FromPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          ToPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          CidrIp: !ImportValue citadel-VPCSubnetPrivateBCidrBlock
+        - IpProtocol: tcp
+          FromPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          ToPort: { Fn::FindInMap: [RdsDBEngine, { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBType] }, port] }
+          CidrIp: !ImportValue citadel-VPCSubnetPrivateCCidrBlock
+
+  DBKMSKey:
+    Type: 'AWS::KMS::Key'
+    DeletionPolicy: Retain
+    Properties:
+      Description: !Sub "KMS Key for ${App}-${Env}-DB"
+      EnableKeyRotation: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: !Ref "AWS::StackName"
+        Statement:
+          - Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                Fn::Sub: 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action:
+              - "kms:*"
+            Resource: "*"
+
+Outputs:
+  DBName:
+    Value: { Fn::FindInMap: [RdsEnvironmentsMap, !Ref Env, DBName] }
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Name"
+  DBAddress:
+    Value: !GetAtt "DB.Endpoint.Address"
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Address"
+  DBPort:
+    Value: !GetAtt "DB.Endpoint.Port"
+    Export:
+      Name: !Sub "${App}-${Env}-{{ addon['name'] }}-DB-Port"
+  DBSecretUser:
+    Description: "The user to log into the DB"
+    Value: !Sub
+      - "${Secret}:username::"
+      - Secret: !GetAtt "DB.MasterUserSecret.SecretArn"
+    Export:
+      Name: !Sub ${App}-${Env}-{{ addon['name'] }}-DB-Secret-Username
+  DBSecretPassword:
+    Description: "The password to log into the DB"
+    Value: !Sub
+      - "${Secret}:password::"
+      - Secret: !GetAtt "DB.MasterUserSecret.SecretArn"
+    Export:
+      Name: !Sub ${App}-${Env}-{{ addon['name'] }}-DB-Secret-Password

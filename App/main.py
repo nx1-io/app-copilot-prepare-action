@@ -24,25 +24,35 @@ def get_data():
         return fetch_data()
 
     with open(test_file) as json_file:
-        return json.load(json_file)
+        try:
+            return json.load(json_file)
+        except Exception as e:
+            print(f'# Error: An exception occurred while parsing JSON: {str(e)}')
+            exit(1)
 
 
 def fetch_data():
-    url = api_url + '/apps/' + app_id + '/copilot'
-    headers = {'Authorization': 'Bearer ' + api_token}
+    try:
+        url = api_url + '/apps/' + app_id + '/copilot'
+        headers = {'Authorization': 'Bearer ' + api_token}
 
-    response = requests.get(url=url, headers=headers)
+        response = requests.get(url=url, headers=headers)
 
-    # write response to file
-    if os.getenv('OUTPUT_PATH'):
-        with open(os.getenv('OUTPUT_PATH') + 'response.json', 'w') as outfile:
-            json.dump(response.json(), outfile)
+        # write response to file
+        if os.getenv('OUTPUT_PATH'):
+            with open(os.getenv('OUTPUT_PATH') + 'response.json', 'w') as outfile:
+                json.dump(response.json(), outfile)
 
-    if response.status_code != 200:
-        print(f'# Error: NX1 request failed with status code {response.status_code}.')
+        if response.status_code != 200:
+            print(response.text)
+            print(f'# Error: NX1 request failed with status code {response.status_code}.')
+            exit(1)
+
+        return response.json()
+    except Exception as e:
+        print(f'# Error: An exception occurred while fetching data: {str(e)}')
+
         exit(1)
-
-    return response.json()
 
 
 def find_repo_features():

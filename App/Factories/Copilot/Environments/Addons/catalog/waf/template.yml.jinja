@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The name of the environment being deployed.
+
+Resources:
+  WebACL:
+    Type: 'AWS::WAFv2::WebACL'
+    Properties:
+      Name: !Sub '${App}-${Env}-Waf'
+      Scope: REGIONAL
+      Description: !Sub 'WebACL for ${App}-${Env}'
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${App}-${Env}-Waf'
+      Rules:
+        - Name: AWSManagedRules
+          Priority: 0
+          OverrideAction:
+{% if addon['metadata']['action'] == 'count' %}
+            Count: {}
+{% else %}
+            None: {}
+{% endif %}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RuleWithAWSManagedRulesMetric
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+              ExcludedRules: []
+
+Outputs:
+  WebACLArn:
+    Description: The ARN of the WebACL.
+    Value: !GetAtt WebACL.Arn
+    Export:
+      Name: !Sub '${App}-${Env}-WebACLArn'

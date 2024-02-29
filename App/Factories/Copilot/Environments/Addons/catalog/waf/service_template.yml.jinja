@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: Your workload's name.
+
+Resources:
+{%- if service['type'] == 'CONTAINER_LOAD_BALANCED' %}
+  WebACLAssociation:
+    Type: 'AWS::WAFv2::WebACLAssociation'
+    Properties:
+      WebACLArn: !ImportValue
+        'Fn::Sub': '${App}-${Env}-WebACLArn'
+      ResourceArn: !Sub
+        - 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/${ExportedLBFullName}'
+        - { ExportedLBFullName: { 'Fn::ImportValue': !Sub '${App}-${Env}-PublicLoadBalancerFullName' }}
+{%- else %}
+  NullResource:
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+    Properties: {}
+{%- endif %}
